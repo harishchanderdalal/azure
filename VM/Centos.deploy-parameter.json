@@ -1,0 +1,72 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "value": "Southeast Asia"
+        },
+        "vmName": {
+            "value": "linux-vm1"
+        },
+        "adminUsername": {
+            "value": "sysfore"
+        },
+        "adminPasswordOrKey": {
+            "value": "Welcome@1234#"
+        },
+        "vmSize": {
+            "value": "Standard_D1_v2"
+        },
+        "centOSVersion": {
+            "value": "7.5"
+        },
+        "storageNewOrExisting": {
+            "value": "new"
+        },
+        "storageAccountName": {
+            "value": "storageywxsyh73"
+        },
+        "storageAccountType": {
+            "value": "Standard_LRS"
+        },
+        "storageAccountResourceGroupName": {
+            "value": "testdeploy"
+        },
+        "virtualNetworkNewOrExisting": {
+            "value": "new"
+        },
+        "virtualNetworkName": {
+            "value": "VirtualNetwork"
+        },
+        "vnetAddressPrefix": {
+            "value": "10.0.0.0/16"
+        },
+        "subnetName": {
+            "value": "subnet1"
+        },
+        "subnetPrefix": {
+            "value": "10.0.0.0/24"
+        },
+        "virtualNetworkResourceGroupName": {
+            "value": "testdeploy"
+        },
+        "publicIpNewOrExisting": {
+            "value": "new"
+        },
+        "publicIpName": {
+            "value": "linuxvm1PublicIp"
+        },
+        "publicIpDns": {
+            "value": "linuxvm1h7oofekr423"
+        },
+        "publicIpResourceGroupName": {
+            "value": "testdeploy"
+        },
+        "publicIpAllocationMethod": {
+            "value": "Dynamic"
+        },
+        "publicIpSku": {
+            "value": "Basic"
+        }
+    }
+}
