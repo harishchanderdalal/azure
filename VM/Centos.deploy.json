@@ -1,0 +1,345 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "defaultValue": "[resourceGroup().location]",
+            "type": "String",
+            "metadata": {
+                "description": "Location for the resources."
+            }
+        },
+        "vmName": {
+            "defaultValue": "linux-vm",
+            "type": "String",
+            "metadata": {
+                "description": "Name for the Virtual Machine."
+            }
+        },
+        "adminUsername": {
+            "type": "String",
+            "metadata": {
+                "description": "User name for the Virtual Machine."
+            }
+        },
+        
+        "adminPasswordOrKey": {
+            "type": "SecureString",
+            "metadata": {
+                "description": "Password or ssh key for the Virtual Machine."
+            }
+        },
+        "vmSize": {
+            "defaultValue": "Standard_D1_v2",
+            "type": "String",
+            "metadata": {
+                "description": "Size for the Virtual Machine."
+            }
+        },
+        "CentOSVersion": {
+            "defaultValue": "7.3",
+            "allowedValues": [
+                    "7.3",
+                    "7.4",
+                    "7.5"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "The CentOS version for the VM. This will pick a fully patched image of this given CentOS version."
+            }
+        },
+        "storageNewOrExisting": {
+            "defaultValue": "new",
+            "type": "String",
+            "metadata": {
+                "description": "Determines whether or not a new storage account should be provisioned."
+            }
+        },
+        "storageAccountName": {
+            "defaultValue": "[concat('storage', uniqueString(resourceGroup().id))]",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the storage account"
+            }
+        },
+        "storageAccountType": {
+            "defaultValue": "Standard_LRS",
+            "type": "String",
+            "metadata": {
+                "description": "Storage account type"
+            }
+        },
+        "storageAccountResourceGroupName": {
+            "defaultValue": "[resourceGroup().name]",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the resource group for the existing storage account"
+            }
+        },
+        "virtualNetworkNewOrExisting": {
+            "defaultValue": "new",
+            "type": "String",
+            "metadata": {
+                "description": "Determines whether or not a new virtual network should be provisioned."
+            }
+        },
+        "virtualNetworkName": {
+            "defaultValue": "VirtualNetwork",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the virtual network"
+            }
+        },
+        "vnetAddressPrefix": {
+            "defaultValue": "10.0.0.0/16",
+            "type": "String",
+            "metadata": {
+                "description": "Address prefix of VNET"
+            }
+        },
+        "subnetName": {
+            "defaultValue": "subnet1",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the subnet"
+            }
+        },
+        "subnetPrefix": {
+            "defaultValue": "10.0.0.0/24",
+            "type": "String",
+            "metadata": {
+                "description": "Subnet prefix of the virtual network"
+            }
+        },
+        "virtualNetworkResourceGroupName": {
+            "defaultValue": "[resourceGroup().name]",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the resource group for the existing virtual network"
+            }
+        },
+        "publicIpNewOrExisting": {
+            "defaultValue": "new",
+            "type": "String",
+            "metadata": {
+                "description": "Determines whether or not a new public ip should be provisioned."
+            }
+        },
+        "publicIpName": {
+            "defaultValue": "PublicIp",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the public ip address"
+            }
+        },
+        "publicIpDns": {
+            "defaultValue": "[concat('linux-vm-', uniqueString(resourceGroup().id))]",
+            "type": "String",
+            "metadata": {
+                "description": "DNS of the public ip address for the VM"
+            }
+        },
+        "publicIpResourceGroupName": {
+            "defaultValue": "[resourceGroup().name]",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the resource group for the public ip address"
+            }
+        },
+        "publicIpAllocationMethod": {
+            "defaultValue": "Dynamic",
+            "allowedValues": [
+                "Dynamic",
+                "Static"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Allocation method for the public ip address"
+            }
+        },
+        "publicIpSku": {
+            "defaultValue": "Basic",
+            "allowedValues": [
+                "Basic",
+                "Standard"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Name of the resource group for the public ip address"
+            }
+        }
+    },
+    "variables": {
+        "imagePublisher": "OpenLogic",
+        "imageOffer": "CentOS",
+        "nicName": "[concat(parameters('vmName'), '-nic')]",
+        "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+                "publicKeys": [
+                    {
+                        "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
+                        "keyData": "[parameters('adminPasswordOrKey')]"
+                    }
+                ]
+            }
+        },
+        "publicIpAddressId": {
+            "id": "[resourceId(parameters('publicIpResourceGroupName'), 'Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]"
+        },
+        "networkSecurityGroupName": "nsg-ssh"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "sku": {
+                "name": "[parameters('storageAccountType')]"
+            },
+            "kind": "Storage",
+            "name": "[parameters('storageAccountName')]",
+            "apiVersion": "2018-02-01",
+            "location": "[parameters('location')]",
+            "condition": "[equals(parameters('storageNewOrExisting'), 'new')]"
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "sku": {
+                "name": "[parameters('publicIpSku')]"
+            },
+            "name": "[parameters('publicIpName')]",
+            "apiVersion": "2018-04-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "[parameters('publicIpAllocationMethod')]",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('publicIpDns')]"
+                }
+            },
+            "condition": "[equals(parameters('publicIpNewOrExisting'), 'new')]"
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('virtualNetworkName')]",
+            "apiVersion": "2018-06-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('vnetAddressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetPrefix')]"
+                        }
+                    }
+                ]
+            },
+            "condition": "[equals(parameters('virtualNetworkNewOrExisting'), 'new')]"
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('networkSecurityGroupName')]",
+            "apiVersion": "2018-04-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "default-allow-ssh",
+                        "properties": {
+                            "priority": 1000,
+                            "sourceAddressPrefix": "*",
+                            "protocol": "Tcp",
+                            "destinationPortRange": "22",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('nicName')]",
+            "apiVersion": "2018-04-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId(parameters('virtualNetworkResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets/', parameters('virtualNetworkName'), parameters('subnetName'))]"
+                            },
+                            "publicIPAddress": "[if(not(equals(parameters('publicIpNewOrExisting'), 'none')), variables('publicIpAddressId') , json('null'))]"
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+                }
+            },
+            "dependsOn": [
+                "[parameters('publicIpName')]",
+                "[parameters('virtualNetworkName')]",
+                "[variables('networkSecurityGroupName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('vmName')]",
+            "apiVersion": "2018-04-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vmName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPasswordOrKey')]"                
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('imagePublisher')]",
+                        "offer": "[variables('imageOffer')]",
+                        "sku": "[parameters('CentOSVersion')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[reference(resourceId(parameters('storageAccountResourceGroupName'), 'Microsoft.Storage/storageAccounts/', parameters('storageAccountName')), '2018-02-01').primaryEndpoints.blob]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[parameters('storageAccountName')]",
+                "[variables('nicName')]"
+            ]
+        }
+    ],
+    "outputs": {
+        "ssh-command": {
+            "type": "String",
+            "value": "[if(equals(parameters('publicIpNewOrExisting'), 'none'), 'no public ip', concat('ssh ', parameters('adminUsername'), '@', reference(resourceId(parameters('publicIpResourceGroupName'), 'Microsoft.Network/publicIPAddresses', parameters('publicIpName')), '2018-04-01').dnsSettings.fqdn))]"
+        }
+    }
+}
