@@ -39,4 +39,4 @@ az network nic ip-config address-pool add --subscription SUBSCRIPTION --resource
 ### VM Remove LB
 ```
 az network nic ip-config address-pool remove --subscription SUBSCRIPTION --resource-group RESOURCEGROUPNAME -n ipconfig1 --nic-name NICNAME --lb-name LBNAME --address-pool NAMEBACKENDPOOL —output table
-``
+```
